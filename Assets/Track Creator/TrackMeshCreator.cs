@@ -155,13 +155,10 @@ public class TrackMeshCreator : MonoBehaviour
                 Vector3 p3 = m_vertsP1[vertoffset] - transform.position; 
                 Vector3 p4 = m_vertsP2[vertoffset] - transform.position; 
 
-                /* offset = 4* vertsAcumulator; 
-                offset += 4* (currentSplinePoint -1); */
-
-                /* p1 = ConcatenateWithTerrain(p1);
+                p1 = ConcatenateWithTerrain(p1);
                 p2 = ConcatenateWithTerrain(p2);
                 p3 = ConcatenateWithTerrain(p3);
-                p4 = ConcatenateWithTerrain(p4); */
+                p4 = ConcatenateWithTerrain(p4); 
 
                 int t1 = offset + 0; 
                 int t2 = offset + 2; 
