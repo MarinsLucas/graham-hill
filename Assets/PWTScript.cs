@@ -13,7 +13,7 @@ public class PWTScript : MonoBehaviour
     {
         frontLeft.run(horizontal, vertical);
         frontRight.run(horizontal, vertical);
-        rearLeft.run(0, vertical);
-        rearRight.run(0, vertical);
+        rearLeft.run(0, 0);
+        rearRight.run(0, 0);
     }
 }

@@ -18,8 +18,9 @@ public class WheelPhysics : MonoBehaviour
     private bool groundHit; 
 
     [Header("Lateral slip")]
-    [SerializeField] private float tireGrpFactor;
+    [SerializeField] private AnimationCurve tireGrpFactor;
     [SerializeField] private float tireMass; 
+    [SerializeField] private float maxSteeringForce; 
 
     [Header("Aceleration params")]
     [SerializeField] private AnimationCurve powerCurve;
@@ -40,15 +41,16 @@ public class WheelPhysics : MonoBehaviour
     void Update()
     {
         maximumDistance = (tireRadius + suspensionRestDist + maximumSpringOffset); 
-        minimumDistance = (tireRadius + (suspensionRestDist - maximumSpringOffset)) > 2*tireRadius ? (tireRadius + (suspensionRestDist - maximumSpringOffset))  : 2*tireRadius; 
+        minimumDistance = (tireRadius + (suspensionRestDist - maximumSpringOffset)) > 2*tireRadius ? (tireRadius + (suspensionRestDist - maximumSpringOffset))  : 2*tireRadius;
         RaycastHit tireRay; 
         groundHit = Physics.Raycast(tireTransform.position, -tireTransform.up,  out tireRay, maximumDistance);
 
-        if(tireRay.distance < minimumDistance && groundHit)
+        /* if(tireRay.distance < minimumDistance && groundHit)
         {
             carRigidbody.AddForceAtPosition(tireTransform.up * 4000f, tireTransform.position);
             Debug.DrawRay(tireTransform.position, tireTransform.up*4000f); 
-        }
+        } */
+
         if(groundHit)
         {
             //Suspension
@@ -68,7 +70,6 @@ public class WheelPhysics : MonoBehaviour
 
             //calcula força da suspensão
             float force = (offset*spring_elastic_coefficient) - (vel * damper_coefficient);
-            Debug.Log(force);
             //aplicando a força
             carRigidbody.AddForceAtPosition(springDir*force, tireTransform.position);
             Debug.DrawRay(tireTransform.position, springDir*force/1000f, Color.green);
@@ -76,17 +77,23 @@ public class WheelPhysics : MonoBehaviour
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             //Steering
             //Direção do vetor que sai do centro da lateral da roda
-            tireTransform.localEulerAngles = new Vector3(tireTransform.localEulerAngles.x, 30f*steeringInput, tireTransform.localEulerAngles.z);
+            tireTransform.localEulerAngles = new Vector3(tireTransform.localEulerAngles.x, 20f*steeringInput, tireTransform.localEulerAngles.z);
             Vector3 steeringDir = tireTransform.right; 
 
             float steeringVel = Vector3.Dot(steeringDir, tireWorldVel);
 
-            float desiredVelChange = -steeringVel * tireGrpFactor;
+            float desiredAccel = -steeringVel/Time.fixedDeltaTime; 
+            
+            float desiredVelChange;
 
-            float desiredAccel = desiredVelChange/Time.fixedDeltaTime; 
+            desiredVelChange = -steeringVel * tireGrpFactor.Evaluate(Mathf.Clamp01(desiredAccel/maxSteeringForce));
+            //desiredVelChange = -steeringVel;
+            desiredAccel = desiredVelChange/Time.fixedDeltaTime;
 
             carRigidbody.AddForceAtPosition(steeringDir * tireMass * desiredAccel, tireTransform.position);
             Debug.DrawRay(tireTransform.position, steeringDir*tireMass*desiredAccel/1000f, Color.red);
+            Debug.Log(desiredAccel);
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             //Acelerating
