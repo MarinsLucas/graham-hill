@@ -222,7 +222,7 @@ public class TrackMeshCreator : MonoBehaviour
     {
         if(drawnGizmos)
         {
-            
+            if(m_vertsP1 != null)
             for(int i = 0; i < m_vertsP1.Count; i++)
             {
                 Handles.SphereHandleCap(0, m_vertsP1[i], Quaternion.identity, 0.5f, EventType.Repaint);

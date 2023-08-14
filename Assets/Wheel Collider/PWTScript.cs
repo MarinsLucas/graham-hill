@@ -16,4 +16,9 @@ public class PWTScript : MonoBehaviour
         rearLeft.run(0, 0);
         rearRight.run(0, 0);
     }
+
+    public float wheelBase()
+    {
+        return Vector3.Distance(frontLeft.transform.position, rearLeft.transform.position); 
+    }
 }
