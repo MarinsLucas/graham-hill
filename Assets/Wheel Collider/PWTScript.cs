@@ -4,17 +4,22 @@ using UnityEngine;
 
 public class PWTScript : MonoBehaviour
 {
-    [SerializeField] private WheelPhysics frontLeft;
-    [SerializeField] private WheelPhysics frontRight;
-    [SerializeField] private WheelPhysics rearLeft; 
-    [SerializeField] private WheelPhysics rearRight;
+    [SerializeField] private WheelCollider frontLeft;
+    [SerializeField] private WheelCollider frontRight;
+    [SerializeField] private WheelCollider rearLeft; 
+    [SerializeField] private WheelCollider rearRight;
 
     public void run(float horizontal, float vertical)
     {
-        frontLeft.run(horizontal, vertical);
+        frontLeft.motorTorque = (vertical * 20000); //Newton por metro
+        frontRight.motorTorque = (vertical * 20000);
+        frontLeft.steerAngle = (horizontal * 15);
+        frontRight.steerAngle =  (horizontal *15);
+
+        /* frontLeft.run(horizontal, vertical);
         frontRight.run(horizontal, vertical);
         rearLeft.run(0, 0);
-        rearRight.run(0, 0);
+        rearRight.run(0, 0); */
     }
 
     public float wheelBase()

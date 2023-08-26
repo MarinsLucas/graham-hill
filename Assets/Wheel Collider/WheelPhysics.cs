@@ -6,10 +6,10 @@ public class WheelPhysics : MonoBehaviour
 {
     [Header("Tire Params")]
     [SerializeField] private Transform tireMesh; 
-    [SerializeField] private float tireRadius; 
+    [SerializeField] public float tireRadius; 
 
     [Header("Suspension Params")]
-    [SerializeField] private float suspensionRestDist; 
+    [SerializeField] public float suspensionRestDist; 
     [SerializeField] private float spring_elastic_coefficient; 
     [SerializeField] private float damper_coefficient; 
     [SerializeField] private float maximumSpringOffset; 
@@ -31,6 +31,20 @@ public class WheelPhysics : MonoBehaviour
     private float steeringInput; 
     private float minimumDistance; 
     private float maximumDistance;
+    RaycastHit tireRay; 
+
+    
+    public bool GetGroundHit(out Vector3 hit)
+    {
+        if(groundHit)
+        {
+            hit = tireTransform.position - tireTransform.up*tireRay.distance;   
+            return true; 
+        }else 
+            hit = new Vector3(0,0,0);
+        return false; 
+
+    }
 
     // Update is called once per frame
     void Start()
@@ -42,7 +56,6 @@ public class WheelPhysics : MonoBehaviour
     {
         maximumDistance = (tireRadius + suspensionRestDist + maximumSpringOffset); 
         minimumDistance = (tireRadius + (suspensionRestDist - maximumSpringOffset)) > 2*tireRadius ? (tireRadius + (suspensionRestDist - maximumSpringOffset))  : 2*tireRadius;
-        RaycastHit tireRay; 
         groundHit = Physics.Raycast(tireTransform.position, -tireTransform.up,  out tireRay, maximumDistance);
 
         /* if(tireRay.distance < minimumDistance && groundHit)
@@ -92,29 +105,32 @@ public class WheelPhysics : MonoBehaviour
 
             carRigidbody.AddForceAtPosition(steeringDir * tireMass * desiredAccel, tireTransform.position);
             Debug.DrawRay(tireTransform.position, steeringDir*tireMass*desiredAccel/1000f, Color.red);
-            Debug.Log(desiredAccel);
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            //Acelerating
-            Vector3 accelDir = tireTransform.forward; 
-
-            if(accelInput != 0.0f)
-            {
-                float carSpeed = Vector3.Dot(tireTransform.forward, carRigidbody.velocity);
-
-                float normalizedSpeed = Mathf.Clamp01(Mathf.Abs(carSpeed)/carTopSpeed);
-
-                float availableTorque = 10000f* powerCurve.Evaluate(normalizedSpeed) * accelInput;
-
-                carRigidbody.AddForceAtPosition(accelDir*availableTorque, tireTransform.position); 
-                Debug.DrawRay(tireTransform.position, accelDir*availableTorque/1000f, Color.blue);
-
-            }
-
+            Acelerating();
         }
     }
 
+    private void Steering()
+    {
+
+    }
+    private void Acelerating()
+    {
+        //Acelerating
+        Vector3 accelDir = tireTransform.forward; 
+
+        if(accelInput != 0.0f)
+        {
+            float carSpeed = Vector3.Dot(tireTransform.forward, carRigidbody.velocity);
+
+            float normalizedSpeed = Mathf.Clamp01(Mathf.Abs(carSpeed)/carTopSpeed);
+
+            float availableTorque = 10000f* powerCurve.Evaluate(normalizedSpeed) * accelInput;
+
+            carRigidbody.AddForceAtPosition(accelDir*availableTorque, tireTransform.position); 
+            Debug.DrawRay(tireTransform.position, accelDir*availableTorque/1000f, Color.blue);
+
+        }
+    }
     public void run(float horizontal, float vertical)
     {
         accelInput = vertical;
