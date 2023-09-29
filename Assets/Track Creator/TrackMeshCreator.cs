@@ -35,66 +35,6 @@ public class TrackMeshCreator : MonoBehaviour
         BuildMesh();  
     }
 
-    //Funções não utilizadas mais
-    /* private void GetVerts()
-    {
-        m_vertsP1 = new List<Vector3>(); 
-        m_vertsP2 = new List<Vector3>(); 
-
-        float step = 1f/(float) resolution ;
-    
-        for(int i = 0; i<resolution ; i++)
-        {
-            float t = step*i; 
-            m_splineSampler.SampleSplineWidth(t, out Vector3 p1, out Vector3 p2);
-            m_vertsP1.Add(p1);
-            m_vertsP2.Add(p2);
-        }
-        vertsCount = m_vertsP1.Count + m_vertsP2.Count; 
-    }
-
-    private void GetVerts1()
-    {
-        m_vertsP1 = new List<Vector3>(); 
-        m_vertsP2 = new List<Vector3>(); 
-
-        float partition = 1f;
-        if(track_repartions != 0)
-        partition = 1f/track_repartions;
-        float k = 0f; 
-
-        while(k <= 1f + partition)
-        {
-            Vector3 aux_p1, aux_p2, aux_p3;
-            m_splineSampler.Sample(k, out aux_p1);
-            m_splineSampler.Sample(k+partition/2f, out aux_p2);
-            m_splineSampler.Sample(k+partition, out aux_p3);
-
-            aux_p2 = aux_p2 - aux_p1;
-            aux_p3 = aux_p3 - aux_p1;
-            float cos = Vector3.Angle(aux_p2, aux_p3); 
-            //float cos = Mathf.Cos(Vector3.Angle(aux_p2, aux_p3)* Mathf.PI/180);
-            if(cos < 15f) cos = 0.2f; 
-            else if(cos < 50f) cos = 1f; 
-            else cos = 1f; 
-
-            float step = 1f/(float) (resolution*cos);
-            float t = k; 
-
-            for(int i = 0; t< k + partition; i++)
-            {
-                t += step; 
-                m_splineSampler.SampleSplineWidth(t, out Vector3 p1, out Vector3 p2);
-                m_vertsP1.Add(p1);
-                m_vertsP2.Add(p2);
-            }
-
-            k += partition; 
-        }
-                vertsCount = m_vertsP1.Count + m_vertsP2.Count; 
-
-    } */
-
     private void GetVerts2()
     {        
         m_vertsP1 = new List<Vector3>(); 
@@ -132,6 +72,7 @@ public class TrackMeshCreator : MonoBehaviour
 
     }
 
+    //Função que cria a malha
     private void BuildMesh()
     {
         Mesh m = new Mesh();
@@ -141,83 +82,90 @@ public class TrackMeshCreator : MonoBehaviour
 
         int vertsAcumulator = 0; 
         int splineOffset = 0;
+        
+        //Esse loop percorre todos as splines do m_splineSampler
          for(int currentSplineIndex = 0; currentSplineIndex < m_splineSampler.NumSplines; currentSplineIndex++)
         {
             splineOffset = vertsAcumulator;
-            splineOffset += currentSplineIndex;
+            //splineOffset += currentSplineIndex;
 
+            //Esse loop percorre cada ponto 
             for(int currentSplinePoint = 1; currentSplinePoint < vertsCountBySpline[currentSplineIndex]-1; currentSplinePoint++)
             {
                 int vertoffset = splineOffset + currentSplinePoint;
 
+                //Vertices do triangulo 
                 Vector3 p1 = m_vertsP1[vertoffset -1] - transform.position; 
                 Vector3 p2 = m_vertsP2[vertoffset -1] - transform.position; 
                 Vector3 p3 = m_vertsP1[vertoffset] - transform.position; 
                 Vector3 p4 = m_vertsP2[vertoffset] - transform.position; 
 
+                //Concatena a malha com o terreno
                 p1 = ConcatenateWithTerrain(p1);
                 p2 = ConcatenateWithTerrain(p2);
                 p3 = ConcatenateWithTerrain(p3);
                 p4 = ConcatenateWithTerrain(p4); 
 
+                //Triangulo 1
                 int t1 = offset + 0; 
                 int t2 = offset + 2; 
                 int t3 = offset + 3; 
-
+                
+                //Triangulo 2
                 int t4 = offset + 3; 
                 int t5 = offset + 1; 
                 int t6 = offset + 0; 
 
                 offset += 4; 
-
+                
+                //Adiciona os vértices e os triangulos nas respectivas listas
                 verts.AddRange(new List<Vector3> {p1, p2, p3, p4});
                 tris.AddRange(new List<int> {t1, t2, t3, t4, t5, t6});
             }
+            
+            //Se a spline for fechada, eu pego o último ponto da spline e o primeiro ponto da spline e junto
+            if (m_splineSampler.GetContainer()[currentSplineIndex].Closed)
+            {
+                int vertoffset = splineOffset + vertsCountBySpline[currentSplineIndex] - 1; // Último ponto da spline
+
+                // Vértices do triângulo para fechar a malha
+                Vector3 p1 = m_vertsP1[vertoffset] - transform.position; //ultimo
+                Vector3 p2 = m_vertsP2[vertoffset] - transform.position; //ultimo
+                Vector3 p3 = m_vertsP1[splineOffset] - transform.position; //primeiro
+                Vector3 p4 = m_vertsP2[splineOffset] - transform.position; //primeiro
+
+                // Concatena a malha com o terreno
+                p1 = ConcatenateWithTerrain(p1);
+                p2 = ConcatenateWithTerrain(p2);
+                p3 = ConcatenateWithTerrain(p3);
+                p4 = ConcatenateWithTerrain(p4);
+
+                // Triângulo 1 para fechar a malha
+                int t1 = offset + 0;
+                int t2 = offset + 2;
+                int t3 = offset + 3;
+
+                // Triângulo 2 para fechar a malha
+                int t4 = offset + 3;
+                int t5 = offset + 1;
+                int t6 = offset + 0;
+
+                offset += 4;
+
+                // Adiciona os vértices e os triângulos nas respectivas listas
+                verts.AddRange(new List<Vector3> { p1, p2, p3, p4 });
+                tris.AddRange(new List<int> { t1, t2, t3, t4, t5, t6 });
+            }
 
             vertsAcumulator += vertsCountBySpline[currentSplineIndex];
-
         }
-         
+
         m.SetVertices(verts);
         m.SetTriangles(tris, 0);
         m_meshFilter.mesh = m;
     }
 
-    /* for(int i = 1; i <= length; i++)
-        {
-            Vector3 p1 = m_vertsP1[i-1] - transform.position;
-            Vector3 p2 = m_vertsP2[i-1] - transform.position;
-            Vector3 p3, p4; 
-
-            if(i == length)
-            {
-                p3 = m_vertsP1[0] - transform.position;
-                p4 = m_vertsP2[0] - transform.position;
-            }else
-            {
-                p3 = m_vertsP1[i] - transform.position;
-                p4 = m_vertsP2[i] - transform.position;
-            }         
-            
-            offset = 4*(i-1);
-
-            p1 = ConcatenateWithTerrain(p1);
-            p2 = ConcatenateWithTerrain(p2);
-            p3 = ConcatenateWithTerrain(p3);
-            p4 = ConcatenateWithTerrain(p4);
-
-            int t1 = offset + 0; 
-            int t2 = offset + 2; 
-            int t3 = offset + 3; 
-
-            int t4 = offset + 3; 
-            int t5 = offset + 1; 
-            int t6 = offset + 0; 
-
-            verts.AddRange(new List<Vector3> {p1, p2, p3, p4});
-            tris.AddRange(new List<int> {t1, t2, t3, t4, t5, t6});
-        } 
- */
+    //Pinta os pontos da pista
     private void OnDrawGizmos()
     {
         if(drawnGizmos)
@@ -232,6 +180,8 @@ public class TrackMeshCreator : MonoBehaviour
         }
     } 
 
+    //Função que concatena os pontos da malha da pista ao terreno abaixo. 
+    //concatenate_max_distance é o valor máximo de deslocamento do ponto da pista para a interpolação com o terreno. 
     private Vector3 ConcatenateWithTerrain(Vector3 pos)
     {
         RaycastHit hit; 
