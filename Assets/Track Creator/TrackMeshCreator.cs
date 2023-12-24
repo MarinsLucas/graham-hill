@@ -52,7 +52,8 @@ public class TrackMeshCreator : MonoBehaviour
             vertsCountBySpline[j] = 0; 
             for(int i = 0; t<1f ; i++)
             {
-                float step = max_step* (m_splineSampler.ClosestKnot(t)/250f);
+                //Aqui que fica o critério de espaçamento entre nós
+                float step = max_step* (m_splineSampler.ClosestKnot(t)/resolution);
                 
                 t += (step < min_step ? min_step : (step>max_step?max_step:step)); 
 
