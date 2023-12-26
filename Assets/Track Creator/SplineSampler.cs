@@ -41,6 +41,14 @@ public class SplineSampler : MonoBehaviour
         p2 = position + (-right  * m_width);
     }
     
+    public void SampleDoubleSpline(int index, float t, out Vector3 p1, out Vector3 p2)
+    {
+        m_splineContainer.Evaluate(index, t, out position, out tangent, out upVector);
+        p1 = position;
+        m_splineContainer.Evaluate(index + 1, t, out position, out tangent, out upVector);
+        p2 = position;
+    }
+
     public float ClosestKnot(float t)
     {
         m_splineContainer.Evaluate(m_splineIndex, t, out position, out tangent, out upVector); 

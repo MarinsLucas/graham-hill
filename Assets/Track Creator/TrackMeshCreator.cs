@@ -47,28 +47,29 @@ public class TrackMeshCreator : MonoBehaviour
         Vector3 p1, p2; 
 
         float t = 0; 
-        for(int j = 0; j < m_splineSampler.NumSplines; j++)
+        
+        vertsCountBySpline[0] = 0; 
+        for(int i = 0; t<1f ; i++)
         {
-            vertsCountBySpline[j] = 0; 
-            for(int i = 0; t<1f ; i++)
-            {
-                //Aqui que fica o critério de espaçamento entre nós
-                float step = max_step* (m_splineSampler.ClosestKnot(t)/resolution);
-                
-                t += (step < min_step ? min_step : (step>max_step?max_step:step)); 
+            //Aqui que fica o critério de espaçamento entre nós
+            float step = max_step* (m_splineSampler.ClosestKnot(t)/resolution);
+            
+            t += (step < min_step ? min_step : (step>max_step?max_step:step)); 
 
-                m_splineSampler.SampleSplineWidth(j, t, out p1, out p2);
-                m_vertsP1.Add(p1);
-                m_vertsP2.Add(p2);
-                vertsCountBySpline[j] += 1; 
-            }
-
-            m_splineSampler.SampleSplineWidth(j, 1f, out p1, out p2);
+            //m_splineSampler.SampleSplineWidth(j, t, out p1, out p2);
+            m_splineSampler.SampleDoubleSpline(0, t, out p1, out p2);
             m_vertsP1.Add(p1);
             m_vertsP2.Add(p2);
-            t = 0;
-            vertsCountBySpline[j] += 1; 
+            vertsCountBySpline[0] += 1; 
         }
+
+        //m_splineSampler.SampleSplineWidth(j, 1f, out p1, out p2);
+        m_splineSampler.SampleDoubleSpline(0, 1f, out p1, out p2);
+        m_vertsP1.Add(p1);
+        m_vertsP2.Add(p2);
+        t = 0;
+        vertsCountBySpline[0] += 1; 
+        
         vertsCount = m_vertsP1.Count + m_vertsP2.Count; 
 
     }
@@ -85,81 +86,79 @@ public class TrackMeshCreator : MonoBehaviour
         int splineOffset = 0;
         
         //Esse loop percorre todos as splines do m_splineSampler
-         for(int currentSplineIndex = 0; currentSplineIndex < m_splineSampler.NumSplines; currentSplineIndex++)
+        splineOffset = vertsAcumulator;
+        //splineOffset += currentSplineIndex;
+
+        //Esse loop percorre cada ponto 
+        for(int currentSplinePoint = 1; currentSplinePoint < vertsCountBySpline[0]-1; currentSplinePoint++)
         {
-            splineOffset = vertsAcumulator;
-            //splineOffset += currentSplineIndex;
+            int vertoffset = splineOffset + currentSplinePoint;
 
-            //Esse loop percorre cada ponto 
-            for(int currentSplinePoint = 1; currentSplinePoint < vertsCountBySpline[currentSplineIndex]-1; currentSplinePoint++)
-            {
-                int vertoffset = splineOffset + currentSplinePoint;
+            //Vertices do triangulo 
+            Vector3 p1 = m_vertsP1[vertoffset -1] - transform.position; 
+            Vector3 p2 = m_vertsP2[vertoffset -1] - transform.position; 
+            Vector3 p3 = m_vertsP1[vertoffset] - transform.position; 
+            Vector3 p4 = m_vertsP2[vertoffset] - transform.position; 
 
-                //Vertices do triangulo 
-                Vector3 p1 = m_vertsP1[vertoffset -1] - transform.position; 
-                Vector3 p2 = m_vertsP2[vertoffset -1] - transform.position; 
-                Vector3 p3 = m_vertsP1[vertoffset] - transform.position; 
-                Vector3 p4 = m_vertsP2[vertoffset] - transform.position; 
+            //Concatena a malha com o terreno
+            p1 = ConcatenateWithTerrain(p1);
+            p2 = ConcatenateWithTerrain(p2);
+            p3 = ConcatenateWithTerrain(p3);
+            p4 = ConcatenateWithTerrain(p4); 
 
-                //Concatena a malha com o terreno
-                p1 = ConcatenateWithTerrain(p1);
-                p2 = ConcatenateWithTerrain(p2);
-                p3 = ConcatenateWithTerrain(p3);
-                p4 = ConcatenateWithTerrain(p4); 
-
-                //Triangulo 1
-                int t1 = offset + 0; 
-                int t2 = offset + 2; 
-                int t3 = offset + 3; 
-                
-                //Triangulo 2
-                int t4 = offset + 3; 
-                int t5 = offset + 1; 
-                int t6 = offset + 0; 
-
-                offset += 4; 
-                
-                //Adiciona os vértices e os triangulos nas respectivas listas
-                verts.AddRange(new List<Vector3> {p1, p2, p3, p4});
-                tris.AddRange(new List<int> {t1, t2, t3, t4, t5, t6});
-            }
+            //Triangulo 1
+            int t1 = offset + 0; 
+            int t2 = offset + 2; 
+            int t3 = offset + 3; 
             
-            //Se a spline for fechada, eu pego o último ponto da spline e o primeiro ponto da spline e junto
-            if (m_splineSampler.GetContainer()[currentSplineIndex].Closed)
-            {
-                int vertoffset = splineOffset + vertsCountBySpline[currentSplineIndex] - 1; // Último ponto da spline
+            //Triangulo 2
+            int t4 = offset + 3; 
+            int t5 = offset + 1; 
+            int t6 = offset + 0; 
 
-                // Vértices do triângulo para fechar a malha
-                Vector3 p1 = m_vertsP1[vertoffset] - transform.position; //ultimo
-                Vector3 p2 = m_vertsP2[vertoffset] - transform.position; //ultimo
-                Vector3 p3 = m_vertsP1[splineOffset] - transform.position; //primeiro
-                Vector3 p4 = m_vertsP2[splineOffset] - transform.position; //primeiro
-
-                // Concatena a malha com o terreno
-                p1 = ConcatenateWithTerrain(p1);
-                p2 = ConcatenateWithTerrain(p2);
-                p3 = ConcatenateWithTerrain(p3);
-                p4 = ConcatenateWithTerrain(p4);
-
-                // Triângulo 1 para fechar a malha
-                int t1 = offset + 0;
-                int t2 = offset + 2;
-                int t3 = offset + 3;
-
-                // Triângulo 2 para fechar a malha
-                int t4 = offset + 3;
-                int t5 = offset + 1;
-                int t6 = offset + 0;
-
-                offset += 4;
-
-                // Adiciona os vértices e os triângulos nas respectivas listas
-                verts.AddRange(new List<Vector3> { p1, p2, p3, p4 });
-                tris.AddRange(new List<int> { t1, t2, t3, t4, t5, t6 });
-            }
-
-            vertsAcumulator += vertsCountBySpline[currentSplineIndex];
+            offset += 4; 
+            
+            //Adiciona os vértices e os triangulos nas respectivas listas
+            verts.AddRange(new List<Vector3> {p1, p2, p3, p4});
+            tris.AddRange(new List<int> {t1, t2, t3, t4, t5, t6});
         }
+        
+        //Se a spline for fechada, eu pego o último ponto da spline e o primeiro ponto da spline e junto
+        if (m_splineSampler.GetContainer()[0].Closed)
+        {
+            int vertoffset = splineOffset + vertsCountBySpline[0] - 1; // Último ponto da spline
+
+            // Vértices do triângulo para fechar a malha
+            Vector3 p1 = m_vertsP1[vertoffset] - transform.position; //ultimo
+            Vector3 p2 = m_vertsP2[vertoffset] - transform.position; //ultimo
+            Vector3 p3 = m_vertsP1[splineOffset] - transform.position; //primeiro
+            Vector3 p4 = m_vertsP2[splineOffset] - transform.position; //primeiro
+
+            // Concatena a malha com o terreno
+            p1 = ConcatenateWithTerrain(p1);
+            p2 = ConcatenateWithTerrain(p2);
+            p3 = ConcatenateWithTerrain(p3);
+            p4 = ConcatenateWithTerrain(p4);
+
+            // Triângulo 1 para fechar a malha
+            int t1 = offset + 0;
+            int t2 = offset + 2;
+            int t3 = offset + 3;
+
+            // Triângulo 2 para fechar a malha
+            int t4 = offset + 3;
+            int t5 = offset + 1;
+            int t6 = offset + 0;
+
+            offset += 4;
+
+            // Adiciona os vértices e os triângulos nas respectivas listas
+            verts.AddRange(new List<Vector3> { p1, p2, p3, p4 });
+            tris.AddRange(new List<int> { t1, t2, t3, t4, t5, t6 });
+        }
+
+        vertsAcumulator += vertsCountBySpline[0];
+        
 
         m.SetVertices(verts);
         m.SetTriangles(tris, 0);
