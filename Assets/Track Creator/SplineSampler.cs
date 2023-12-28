@@ -61,10 +61,10 @@ public class SplineSampler : MonoBehaviour
 
     public float oppositePoint(Vector3 p1, Vector3 ortogonal, int index, float t)
     {   
-        float tMin = t-0.3f;
-        float tMax = t+0.3f; 
+        /* float tMin = 0;
+        float tMax = 1; 
         
-        int maxitt = 10;  
+        int maxitt = 10000;  
         
         float3 pontoAtual;
         for(int i = 0; i < maxitt; i++)
@@ -78,11 +78,26 @@ public class SplineSampler : MonoBehaviour
                 return tMid;
             
             if(dot < 0)
-                tMax = tMid;
+                tMin = tMid;
             else
-                tMin = tMid; 
+                tMax = tMid; 
         }
-        return (tMin + tMax)*0.5f; 
+        return (tMin + tMax)*0.5f; */ 
+
+        float maxDot = -1.0f;
+        float tfinal = 0.0f;
+        for(float i = 0; i<1.0f; i+= 0.01f)
+        {
+            m_splineContainer.Evaluate(index, i, out position, out tangent, out upVector);
+            float distance = Vector3.Dot(ortogonal, new float3(p1.x, p1.y, p1.z)-position);
+
+            if(distance > maxDot)
+            {
+                maxDot = distance;
+                tfinal = i; 
+            }
+        }
+        return tfinal; 
     }
 
     public float ClosestKnot(float t)

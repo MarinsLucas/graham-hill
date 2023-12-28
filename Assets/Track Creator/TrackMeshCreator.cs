@@ -27,6 +27,9 @@ public class TrackMeshCreator : MonoBehaviour
     private void Start()
     {
         m_splineSampler = this.transform.GetComponent<SplineSampler>(); 
+        GetVerts2(); 
+        BuildMesh();  
+        Debug.Log("Gerou a malha");
     }
 
     private void Update()
