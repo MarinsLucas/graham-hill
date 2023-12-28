@@ -11,6 +11,7 @@ public class SplineSampler : MonoBehaviour
     [SerializeField] private SplineContainer m_splineContainer; 
     [SerializeField] private int m_splineIndex; 
     [SerializeField] private float m_width;
+    [SerializeField] private bool debug; 
     public int NumSplines; 
 
     float3 position; 
@@ -43,10 +44,45 @@ public class SplineSampler : MonoBehaviour
     
     public void SampleDoubleSpline(int index, float t, out Vector3 p1, out Vector3 p2)
     {
-        m_splineContainer.Evaluate(index, t, out position, out tangent, out upVector);
+        int mainCurve = shortestCurve();
+        //Pontos da curva menor (pontos espalhados normalmente)
+        m_splineContainer.Evaluate(mainCurve, t, out position, out tangent, out upVector);
         p1 = position;
+
+        if(debug)
+            Debug.DrawRay(p1, -Vector3.Cross(tangent, upVector).normalized*100f, Color.red);
+
         m_splineContainer.Evaluate(index + 1, t, out position, out tangent, out upVector);
-        p2 = position;
+        p2 = position; 
+        /* m_splineContainer.Evaluate(mainCurve+1, oppositePoint(p1, -Vector3.Cross(tangent, upVector).normalized, mainCurve+1, t), out position, out tangent, out upVector);
+        p2 = position;  */
+    }
+
+
+    public float oppositePoint(Vector3 p1, Vector3 ortogonal, int index, float t)
+    {   
+        float tMin = t-0.3f;
+        float tMax = t+0.3f; 
+        
+        int maxitt = 10;  
+        
+        float3 pontoAtual;
+        for(int i = 0; i < maxitt; i++)
+        {
+            float tMid= (tMin + tMax)*0.5f;
+            m_splineContainer.Evaluate(index, tMid, out position, out tangent, out upVector);
+            Vector3 direcaoAtual = position - (float3)p1;
+            float dot = Vector3.Dot(direcaoAtual, ortogonal);
+            
+            if(dot > 0.7f)
+                return tMid;
+            
+            if(dot < 0)
+                tMax = tMid;
+            else
+                tMin = tMid; 
+        }
+        return (tMin + tMax)*0.5f; 
     }
 
     public float ClosestKnot(float t)
@@ -70,5 +106,11 @@ public class SplineSampler : MonoBehaviour
     public SplineContainer GetContainer()
     {
         return m_splineContainer;
+    }
+
+    public int shortestCurve()
+    { 
+        int shortestIndex = m_splineContainer.CalculateLength(0) > m_splineContainer.CalculateLength(1) ? 1 : 0;  
+        return shortestIndex;
     }
 }
